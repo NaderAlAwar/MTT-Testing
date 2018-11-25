@@ -192,10 +192,58 @@ def from_json(ast_json):
 
 
 #------------------------------------------------------------------------------
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        ast_dict = file_to_dict(sys.argv[1])
-        ast = from_dict(ast_dict)
-        print(to_json(ast, sort_keys=True, indent=4))
+
+def find_function_to_test(ast_dict, to_test):
+    """ Finds the dict of the function named to_test in ast_dict """
+    for node in ast_dict['ext']:
+        if node['_nodetype'] == "FuncDef" and node['decl']['name'] == to_test:
+            return node  
+
+def add_variable_to_dict(variable_identifier, variable_type, variables_dict):
+    """ node_json is the node with _nodetype == 'Decl' """
+    if variable_identifier in variables_dict.keys():
+        variables_dict[variable_identifier]['versions'] = variables_dict[variable_identifier]['versions'] + 1
     else:
-        print("Please provide a filename as argument")
+        variable_json = {}
+        variable_json['type'] = variable_type
+        variable_json['versions'] = 1
+        variable_json['type_theory'] = []
+        variables_dict[variable_identifier] = variable_json
+
+def handle_nodetype(node_json, variables_dict):
+    nodetype = node_json['_nodetype'] # gets the type of the node. For a list of supported nodetypes, see nodetypes.txt
+    if nodetype == 'Decl' and node_json['type']['_nodetype'] == 'TypeDecl':
+        variable_identifier = node_json['name']
+        variable_type = node_json['type']['type']['names'][0]
+        add_variable_to_dict(variable_identifier, variable_type, variables_dict)
+    elif nodetype == 'Assignment':
+        variable_identifier = node_json['lvalue']['name']
+        add_variable_to_dict(variable_identifier, "", variables_dict) # variable type is not needed since the variable already exists
+
+def get_args_of_function(function_json):
+    args_json_list = function_json['decl']['type']['args']['params'] # a list of arguments represented as jsons
+    args_dict = {}
+    for arg in args_json_list:
+        variable_identifier = arg['name']
+        variable_type = arg['type']['type']['names'][0]
+        add_variable_to_dict(variable_identifier, variable_type, args_dict)
+    return args_dict
+
+def get_variables_of_function(function_json):
+    variables_dict = get_args_of_function(function_json) # adds the arguments to the dictionary
+    for node in function_json['body']['block_items']:
+        handle_nodetype(node, variables_dict)
+    return variables_dict
+
+if __name__ == "__main__":
+    if len(sys.argv) > 2:
+        file_name = sys.argv[1]
+        function_name = sys.argv[2]
+        ast_dict = file_to_dict(file_name)
+        function_to_test = find_function_to_test(ast_dict, function_name)
+        function_variables = get_variables_of_function(function_to_test)
+        print(function_variables)
+        # ast = from_dict(ast_dict)
+        # print(to_json(ast, sort_keys=True, indent=4))
+    else:
+        print("Please provide a filename and a function as arguments")

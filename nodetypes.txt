@@ -1,0 +1,24 @@
+"_nodetype": "ArrayDecl", 
+"_nodetype": "Assignment", # if the node is a declaration as well, it is considered a declaration
+"_nodetype": "BinaryOp",
+"_nodetype": "Compound",
+"_nodetype": "Constant",
+"_nodetype": "Decl",
+"_nodetype": "DeclList", # occurs in for loop
+"_nodetype": "For",
+"_nodetype": "ID", # used inside lvalue for example. represents the name of a single variable
+"_nodetype": "If",
+"_nodetype": "InitList", # repreents a list of nodes inside an initialization of an array
+"_nodetype": "ParamList", # inside function declaration
+"_nodetype": "Return",
+"_nodetype": "UnaryOp",
+
+IGNORE:
+"_nodetype": "FuncCall",
+"_nodetype": "FuncDecl",
+"_nodetype": "FuncDef",
+"_nodetype": "TypeDecl",
+"_nodetype": "FileAST",
+"_nodetype": "IdentifierType",
+"_nodetype": "ExprList",
+
