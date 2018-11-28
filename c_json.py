@@ -211,6 +211,8 @@ def add_variable_to_dict(variable_identifier, variable_type, variables_dict):
         variables_dict[variable_identifier] = variable_json
 
 def handle_nodetype(node_json, variables_dict):
+    if isinstance(node_json, type(None)) == True:
+        return
     nodetype = node_json['_nodetype'] # gets the type of the node. For a list of supported nodetypes, see nodetypes.txt
     if nodetype == 'Decl' and node_json['type']['_nodetype'] == 'TypeDecl':
         variable_identifier = node_json['name']
@@ -219,6 +221,18 @@ def handle_nodetype(node_json, variables_dict):
     elif nodetype == 'Assignment':
         variable_identifier = node_json['lvalue']['name']
         add_variable_to_dict(variable_identifier, "", variables_dict) # variable type is not needed since the variable already exists
+    elif nodetype == 'If':
+        if_true_node = node_json['iftrue']
+        if_false_node = node_json['iffalse']
+        handle_nodetype(if_true_node, variables_dict)
+        handle_nodetype(if_false_node, variables_dict)
+    elif nodetype == 'Compound':
+        block_items = node_json['block_items']
+        if isinstance(block_items, type(None)) == True:
+            return
+        for node in block_items:
+            handle_nodetype(node, variables_dict)
+
 
 def get_args_of_function(function_json):
     args_json_list = function_json['decl']['type']['args']['params'] # a list of arguments represented as jsons

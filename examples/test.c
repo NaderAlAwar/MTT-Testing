@@ -32,7 +32,7 @@ int test(int x, double y)
 	int testArray[] = {testA, 1, testB};
 	for(int i = 0; i < 3; i++)
 	{
-		testA = testA + 1;
+		testArray[i] = testA + 1;
 	}
 	int testC = testA + testB;
 	return x+y;
