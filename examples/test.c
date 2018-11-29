@@ -8,9 +8,10 @@ int main()
 
 int test(int x, double y)
 {
-	x = y + 3;
+	x = y + 3 + 6;
 	int testA = 1;
 	int testB = 2;
+	int testF = 2 + testA;
 	if(testA < testB)
 	{
 		testA += 1;

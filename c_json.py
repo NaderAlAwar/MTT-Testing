@@ -205,33 +205,89 @@ def add_variable_to_dict(variable_identifier, variable_type, variables_dict):
         variables_dict[variable_identifier]['versions'] = variables_dict[variable_identifier]['versions'] + 1
     else:
         variable_json = {}
+        variable_json['is_array'] = False
+        variable_json['is_constant'] = False
         variable_json['type'] = variable_type
         variable_json['versions'] = 1
         variable_json['type_theory'] = []
         variables_dict[variable_identifier] = variable_json
 
+def add_constant_to_dict(constant_value, constant_type, variables_dict):
+    if constant_value in variables_dict.keys():
+        return
+    else:
+        constant_json = {}
+        constant_json['type'] = constant_type
+        constant_json['is_array'] = False
+        constant_json['is_constant'] = True
+        constant_json['versions'] = 1
+        constant_json['type_theory'] = []
+        variables_dict[constant_value] = constant_json
+
+def add_array_to_dict(array_identifier, array_type, variables_dict):
+    if array_identifier in variables_dict.keys():
+        variables_dict[array_identifier]['versions'] = variables_dict[array_identifier]['versions'] + 1
+    else:
+        array_json = {}
+        array_json['type'] = array_type
+        array_json['is_array'] = True
+        array_json['is_constant'] = False
+        array_json['versions'] = 1
+        array_json['type_theory'] = []
+        variables_dict[array_identifier] = array_json
+
 def handle_nodetype(node_json, variables_dict):
     if isinstance(node_json, type(None)) == True:
         return
     nodetype = node_json['_nodetype'] # gets the type of the node. For a list of supported nodetypes, see nodetypes.txt
-    if nodetype == 'Decl' and node_json['type']['_nodetype'] == 'TypeDecl':
+
+    if nodetype == 'Decl' and node_json['type']['_nodetype'] == 'TypeDecl': # declaring a normal variable
         variable_identifier = node_json['name']
         variable_type = node_json['type']['type']['names'][0]
         add_variable_to_dict(variable_identifier, variable_type, variables_dict)
-    elif nodetype == 'Assignment':
+        handle_nodetype(node_json['init'], variables_dict)
+
+    elif nodetype == 'Decl' and node_json['type']['_nodetype'] == 'ArrayDecl': # declaring an array
+        array_identifier = node_json['type']['type']['declname']
+        array_type = node_json['type']['type']['type']['names'][0]
+        add_array_to_dict(array_identifier, array_type, variables_dict)
+        intializer_list = node_json['init']['exprs']
+        for node in intializer_list:
+            handle_nodetype(node, variables_dict)
+
+    elif nodetype == 'Assignment' and node_json['lvalue']['_nodetype'] == 'ArrayRef': # assigning to an array
+        array_identifier = node_json['lvalue']['name']['name']
+        add_array_to_dict(array_identifier, "", variables_dict) # array type not needed since it already exists in the dict
+        handle_nodetype(node_json['rvalue'], variables_dict)
+
+    elif nodetype == 'Assignment': # assigning to a normal variable
         variable_identifier = node_json['lvalue']['name']
         add_variable_to_dict(variable_identifier, "", variables_dict) # variable type is not needed since the variable already exists
+        handle_nodetype(node_json['rvalue'], variables_dict)
+
     elif nodetype == 'If':
         if_true_node = node_json['iftrue']
         if_false_node = node_json['iffalse']
         handle_nodetype(if_true_node, variables_dict)
         handle_nodetype(if_false_node, variables_dict)
+
     elif nodetype == 'Compound':
         block_items = node_json['block_items']
         if isinstance(block_items, type(None)) == True:
             return
         for node in block_items:
             handle_nodetype(node, variables_dict)
+
+    elif nodetype == 'BinaryOp':
+        handle_nodetype(node_json['left'], variables_dict)
+        handle_nodetype(node_json['right'], variables_dict)
+
+    elif nodetype == 'Constant':
+        add_constant_to_dict(node_json['value'], node_json['type'], variables_dict)
+
+    elif nodetype == 'For':
+        handle_nodetype(node_json['init']['decls'][0], variables_dict)
+        handle_nodetype(node_json['stmt'], variables_dict)
 
 
 def get_args_of_function(function_json):
