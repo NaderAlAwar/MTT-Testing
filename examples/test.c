@@ -31,7 +31,7 @@ int test(int x, double y)
 
 	}
 	int testArray[] = {testA, 1, testB};
-	for(int i = 0; i < 3; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		testArray[i] = testA + 1;
 	}

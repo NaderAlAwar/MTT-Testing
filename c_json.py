@@ -207,7 +207,8 @@ def add_variable_to_dict(variable_identifier, variable_type, variables_dict):
         variable_json = {}
         variable_json['is_array'] = False
         variable_json['is_constant'] = False
-        variable_json['type'] = variable_type
+        variable_json['data_type'] = variable_type
+        variable_json['type'] = 'data'
         variable_json['versions'] = 1
         variable_json['type_theory'] = []
         variables_dict[variable_identifier] = variable_json
@@ -217,9 +218,10 @@ def add_constant_to_dict(constant_value, constant_type, variables_dict):
         return
     else:
         constant_json = {}
-        constant_json['type'] = constant_type
+        constant_json['data_type'] = constant_type
         constant_json['is_array'] = False
         constant_json['is_constant'] = True
+        constant_json['type'] = 'constant'
         constant_json['versions'] = 1
         constant_json['type_theory'] = []
         variables_dict[constant_value] = constant_json
@@ -229,9 +231,10 @@ def add_array_to_dict(array_identifier, array_type, variables_dict):
         variables_dict[array_identifier]['versions'] = variables_dict[array_identifier]['versions'] + 1
     else:
         array_json = {}
-        array_json['type'] = array_type
+        array_json['data_type'] = array_type
         array_json['is_array'] = True
         array_json['is_constant'] = False
+        array_json['type'] = 'data'
         array_json['versions'] = 1
         array_json['type_theory'] = []
         variables_dict[array_identifier] = array_json
@@ -287,6 +290,7 @@ def handle_nodetype(node_json, variables_dict):
 
     elif nodetype == 'For':
         handle_nodetype(node_json['init']['decls'][0], variables_dict)
+        handle_nodetype(node_json['cond'], variables_dict)
         handle_nodetype(node_json['stmt'], variables_dict)
 
 
@@ -305,6 +309,53 @@ def get_variables_of_function(function_json):
         handle_nodetype(node, variables_dict)
     return variables_dict
 
+def add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables): # specifies whether each variable is data, constant or bound
+    function_variables_keys = function_variables.keys()
+
+    for bound_index in bound_index_tuples:
+        if bound_index[0] in function_variables_keys and bound_index[1] in function_variables_keys:
+            function_variables[bound_index[0]]['type'] = 'bound'
+            function_variables[bound_index[1]]['type'] = 'index'
+
+    for bound_array in bound_array_tuples:
+        if bound_array[0] in function_variables_keys and bound_array[1] in function_variables_keys:
+            # function_variables[bound_array[0]]['type'] = 'bound' # specify the variables representing bounds as such
+            # TODO: figure this out:
+            # since bound_array[0] is a constant found in the code, it could also be a constant. Thus is it safer to keep it as a data
+            function_variables[bound_array[1]]['bound'] = int(bound_array[0]) # add a field containing the bound (or size) to each array
+
+def print_function_variables(function_variables): # takes in a dict and outputs the contents in a the format 'name \n type \n datatype'
+    for variable in function_variables.keys():
+        number_of_versions = function_variables[variable]['versions']
+
+        if function_variables[variable]['is_array'] == True:
+            for array_version in range(number_of_versions):
+                for array_index in range(function_variables[variable]['bound']):
+                    print(variable + str(array_version) + str(array_index))
+                    print(function_variables[variable]['type'])
+                    print(function_variables[variable]['data_type'])
+                    print()
+
+        elif function_variables[variable]['is_constant'] == True:
+            print(variable)
+            print(function_variables[variable]['type'])
+            print(function_variables[variable]['data_type'])
+            print()
+
+        else:
+            for variable_version in range(number_of_versions):
+                print(variable + str(variable_version))
+                print(function_variables[variable]['type'])
+                print(function_variables[variable]['data_type'])
+                print()
+
+def list_to_tuples(list):
+    tuples = []
+    for item in list:
+        split_item = item.split(',')
+        tuples.append((split_item[0],split_item[1]))
+    return tuples
+
 if __name__ == "__main__":
     if len(sys.argv) > 2:
         file_name = sys.argv[1]
@@ -312,7 +363,14 @@ if __name__ == "__main__":
         ast_dict = file_to_dict(file_name)
         function_to_test = find_function_to_test(ast_dict, function_name)
         function_variables = get_variables_of_function(function_to_test)
-        print(function_variables)
+        print("Enter the names of all the variables representing indices and their loop bounds in the following format 'bound,index' separated by spaces")
+        bound_index_list = sys.stdin.readline().split('\n')[0].split(' ')
+        bound_index_tuples = list_to_tuples(bound_index_list)
+        print("Enter the values of all the constants representing array bounds in the following format 'bound,array' and separated by spaces, where bound is a constant")
+        bound_array_list = sys.stdin.readline().split('\n')[0].split(' ')
+        bound_array_tuples = list_to_tuples(bound_array_list)
+        add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables)
+        print_function_variables(function_variables)
         # ast = from_dict(ast_dict)
         # print(to_json(ast, sort_keys=True, indent=4))
     else:
