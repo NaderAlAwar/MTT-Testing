@@ -350,6 +350,8 @@ def print_function_variables(function_variables): # takes in a dict and outputs 
                 print()
 
 def list_to_tuples(list):
+    if len(list) == 0:
+        return []
     tuples = []
     for item in list:
         split_item = item.split(',')
@@ -362,14 +364,15 @@ if __name__ == "__main__":
         function_name = sys.argv[2]
         ast_dict = file_to_dict(file_name)
         function_to_test = find_function_to_test(ast_dict, function_name)
-        function_variables = get_variables_of_function(function_to_test)
-        print("Enter the names of all the variables representing indices and their loop bounds in the following format 'bound,index' separated by spaces")
-        bound_index_list = sys.stdin.readline().split('\n')[0].split(' ')
-        bound_index_tuples = list_to_tuples(bound_index_list)
-        print("Enter the values of all the constants representing array bounds in the following format 'bound,array' and separated by spaces, where bound is a constant")
-        bound_array_list = sys.stdin.readline().split('\n')[0].split(' ')
-        bound_array_tuples = list_to_tuples(bound_array_list)
-        add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables)
+        function_variables = get_args_of_function(function_to_test)
+        # function_variables = get_variables_of_function(function_to_test)
+        # print("Enter the names of all the variables representing indices and their loop bounds in the following format 'bound,index' separated by spaces")
+        # bound_index_list = sys.stdin.readline().split('\n')[0].split(' ')
+        # bound_index_tuples = list_to_tuples(bound_index_list)
+        # print("Enter the values of all the constants representing array bounds in the following format 'bound,array' and separated by spaces, where bound is a constant")
+        # bound_array_list = sys.stdin.readline().split('\n')[0].split(' ')
+        # bound_array_tuples = list_to_tuples(bound_array_list)
+        # add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables)
         print_function_variables(function_variables)
         # ast = from_dict(ast_dict)
         # print(to_json(ast, sort_keys=True, indent=4))
