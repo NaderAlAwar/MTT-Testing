@@ -3,7 +3,8 @@
 #include <iostream>
 #include <string>
 #include <bits/stdc++.h> 
-#include<stdlib.h> 
+#include <stdlib.h>
+#include <iterator>
 
 using namespace z3;
 
@@ -13,6 +14,8 @@ size_t GetNextArithmeticOperator(std::string &arithmeticExpression);
 bool CheckIfInteger(std::string &stringToCheck, int &outValue);
 expr FormArithmeticExpression(std::string &arithmeticExpression, context &c);
 expr FormValuationFormula(std::string &valuationFormula, context &c, char delimiter);
+std::vector<std::string> SolveValuationFormulae(std::vector<std::string> &valuationFormulae);
+std::string GetVariableAssignments(model &m);
 
 void GetVariables()
 {
@@ -21,16 +24,24 @@ void GetVariables()
 
 int main()
 {
-    std::string test = "xss+y*5+2+z<=7+643+fga,fg9+78+92>x";
-    context c;
+    std::vector<std::string> v;
+    v.push_back("xss+y*5+2+z<=7+643+fga,fg9+78+92>x");
+    v.push_back("1>2");
+    v.push_back("8+xss==3");
+    v = SolveValuationFormulae(v);
+    for (int i = 0; i < v.size(); i++)
+    {
+        std::cout << v.at(i) << std::endl;
+    }
+    // context c;
 
     // std::cout << GetNextArithmeticOperator(test);
-    expr temp = FormValuationFormula(test, c, ',');
+    // expr temp = FormValuationFormula(test, c, ',');
     // test = "x+y+z<2";
     // expr* temp2 = FormBooleanExpression(test);
 	// std::cout << "find_model_example1\n";
     // expr x = FormArithmeticExpression(test, c);
-    std::cout << temp;
+    // std::cout << temp;
     // expr x = c.int_const("x");
     // expr y = c.int_const("y");
     // expr z = c.int_const("x");
@@ -38,6 +49,7 @@ int main()
     // // // expr w = q + 1;
     // // std::cout << q;
     // solver s(c);
+    // s.add(temp);
 
     // s.add(z > 7);
     // // s.add(x >= 1);
@@ -46,7 +58,7 @@ int main()
 
     // model m = s.get_model();
     // std::cout << m << "\n";
-    // // traversing the model
+    // traversing the model
     // for (unsigned i = 0; i < m.size(); i++) {
     //     func_decl v = m[i];
     //     // this problem contains only constants
@@ -57,6 +69,40 @@ int main()
  //    std::cout << "x + y + 1 = " << m.eval(x + y + 1) << "\n";
 }
 
+std::string GetVariableAssignments(model &m)
+{
+    std::string result = "";
+    for (unsigned i = 0; i < m.size(); i++) {
+        func_decl v = m[i];
+        result = result + "," + v.name().str() + "=" + m.get_const_interp(v).to_string();
+    }
+    return result;
+}
+
+std::vector<std::string> SolveValuationFormulae(std::vector<std::string> &valuationFormulae)
+{
+    std::vector<std::string> result;
+    for(int i = 0; i < valuationFormulae.size() ; i++)
+    {
+        context c;
+        expr valuationFormula = FormValuationFormula(valuationFormulae.at(i), c, ',');
+        solver s(c);
+        s.add(valuationFormula);
+        if(s.check() == unsat)
+        {
+            result.push_back("unsat");
+        }
+        else
+        {
+            model m = s.get_model();
+            result.push_back(GetVariableAssignments(m));
+        }
+    }
+    return result;
+}
+
+
+
 expr FormValuationFormula(std::string &valuationFormula, context &c, char delimiter)
 {
     size_t delimiterLocation = valuationFormula.find(delimiter);
@@ -65,7 +111,7 @@ expr FormValuationFormula(std::string &valuationFormula, context &c, char delimi
     {
         return FormBooleanExpression(valuationFormula, c);
     }
-    
+
     std::string atomicFormula = valuationFormula.substr(0, delimiterLocation);
     expr atomicExpression = FormBooleanExpression(atomicFormula, c);
     std::string remainingValuationFormula = valuationFormula.substr(delimiterLocation + 1);
@@ -178,6 +224,11 @@ expr FormArithmeticExpression(std::string &arithmeticExpression, context &c)
 
     if (nextOperatorLocation == std::string::npos) //meaning no operators left in the string
     {
+        int nextConstant;
+        if (CheckIfInteger(arithmeticExpression, nextConstant))
+        {
+            return c.int_val(nextConstant);
+        }
         return c.int_const(arithmeticExpression.c_str());
     }
 
