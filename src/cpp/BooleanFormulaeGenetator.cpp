@@ -13,7 +13,6 @@ BooleanFormulaeGenetator::BooleanFormulaeGenetator(string fileName, list<string>
 
 	if (typeTheoryParserFile.fail())cout << "Oops, cannot open file" << endl;//checking if we couldn't open the file
 	else {
-		cout << "\n\t\tFile opened successfully!!\n\n";
 		string identifier;
 		string type;
 		string dataType;
