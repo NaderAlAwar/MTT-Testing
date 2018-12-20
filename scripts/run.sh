@@ -4,8 +4,12 @@ OPERATORS_ALLOWED="1"
 PARSED_FILE="parsed_file.txt"
 ARGUMENTS_FILE="arguments.txt"
 
-python3 ../src/parse_program.py $FILE_TO_TEST $FUNCTION_TO_TEST $PARSED_FILE $ARGUMENTS_FILE
-../src/run_mtt $PARSED_FILE $OPERATORS_ALLOWED $ARGUMENTS_FILE
+PARSER_FILE="../src/python/parse_program.py" # this is the python script that will parse the c file
+CPP_BINARY="../bin/run_mtt"
+
+
+python3 $PARSER_FILE $FILE_TO_TEST $FUNCTION_TO_TEST $PARSED_FILE $ARGUMENTS_FILE
+$CPP_BINARY $PARSED_FILE $OPERATORS_ALLOWED $ARGUMENTS_FILE
 
 rm $PARSED_FILE
 rm $ARGUMENTS_FILE
