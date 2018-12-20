@@ -2,12 +2,13 @@
 
 
 
-BooleanFormulaeGenetator::BooleanFormulaeGenetator(string fileName, list<string> *int_BooleanOperatorsListI, list<string> *int_arithmeticOperatorsListI) {
+BooleanFormulaeGenetator::BooleanFormulaeGenetator(string fileName, list<string> *int_BooleanOperatorsListI, list<string> *int_arithmeticOperatorsListI, list<string> *atomicBooleanFormulaeListI) {
 
 	this->int_arithmeticOperatorsList = int_arithmeticOperatorsListI;
 	this->int_BooleanOperatorsList = int_BooleanOperatorsListI;
+	this->atomicBooleanFormulaeList = atomicBooleanFormulaeListI;
 
-	typeTheoryParserFile.open(generalPath.append(fileName).append(".txt"));
+	typeTheoryParserFile.open(fileName);
 
 
 	if (typeTheoryParserFile.fail())cout << "Oops, cannot open file" << endl;//checking if we couldn't open the file
@@ -36,8 +37,16 @@ void BooleanFormulaeGenetator::generateFormulae(int operatorCounter,bool boolOpT
 		for (list<Component*>::iterator it = componentList->begin(); it != componentList->end(); it++) {
 			printer[index] = (*it)->getIdentifier();
 			
-			for (int i = 0; i <= index; i++)cout << printer[i];//printing
-			cout<<endl;
+			string atomicBooleanFormula="";
+			atomicBooleanFormula=printer[0];
+
+			for (int i = 1; i <= index; i++)atomicBooleanFormula.append(printer[i]);
+			
+			atomicBooleanFormulaeList->push_back(atomicBooleanFormula);
+			cout << atomicBooleanFormulaeList->back()<<endl;
+			
+			//for (int i = 0; i <= index; i++)cout << printer[i];//printing
+			//cout<<endl;
 
 		}
 		return;

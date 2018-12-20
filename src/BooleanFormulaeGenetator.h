@@ -17,13 +17,13 @@ private:
 	list<Component*> *componentList= new list<Component*>();
 	list<string> *int_BooleanOperatorsList;				//predefined--" <,>,=="
 	list<string> *int_arithmeticOperatorsList;			//predefined--"+,*,-"
-
+	list<string> *atomicBooleanFormulaeList;			//holds the atomic formulae
 	ifstream typeTheoryParserFile;						//name of the opened file
 	string fileLineGet="";								//used to read a line from the file 
 	string generalPath = "/Users/TOSHIBA/Desktop/";		//general path
 
 public:
-	BooleanFormulaeGenetator(string fileName, list<string> *int_BooleanOperatorsListI, list<string> *int_arithmeticOperatorsListI);
+	BooleanFormulaeGenetator(string fileName, list<string> *int_BooleanOperatorsListI, list<string> *int_arithmeticOperatorsListI, list<string> *atomicBooleanFormulaeList);
 	void generateFormulae(int operatorCounter, bool boolOpTaken, bool takeComponent,string *printer,int index);							//used to ouptput the formulae
 	~BooleanFormulaeGenetator();
 };

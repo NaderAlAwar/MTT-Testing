@@ -7,8 +7,6 @@ Component::Component(string indentifier, string type, string dataType){
 	this->identifier = indentifier;
 	this->type = type;
 	this->dataType = dataType;
-
-
 }
 
 

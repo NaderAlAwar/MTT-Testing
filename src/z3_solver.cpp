@@ -5,78 +5,35 @@
 #include <bits/stdc++.h> 
 #include <stdlib.h>
 #include <iterator>
+#include "z3_solver.h"
 
 using namespace z3;
-
-size_t FindBooleanOperator(std::string &expression);
-expr FormBooleanExpression(std::string &booleanExpression, context &c);
-size_t GetNextArithmeticOperator(std::string &arithmeticExpression);
-bool CheckIfInteger(std::string &stringToCheck, int &outValue);
-expr FormArithmeticExpression(std::string &arithmeticExpression, context &c);
-expr FormValuationFormula(std::string &valuationFormula, context &c, char delimiter);
-std::vector<std::string> SolveValuationFormulae(std::vector<std::string> &valuationFormulae);
-std::string GetVariableAssignments(model &m);
-
-void GetVariables()
-{
-
-}
-
-int main()
-{
-    std::vector<std::string> v;
-    v.push_back("xss+y*5+2+z<=7+643+fga,fg9+78+92>x");
-    v.push_back("1>2");
-    v.push_back("8+xss==3");
-    v = SolveValuationFormulae(v);
-    for (int i = 0; i < v.size(); i++)
-    {
-        std::cout << v.at(i) << std::endl;
-    }
-    // context c;
-
-    // std::cout << GetNextArithmeticOperator(test);
-    // expr temp = FormValuationFormula(test, c, ',');
-    // test = "x+y+z<2";
-    // expr* temp2 = FormBooleanExpression(test);
-	// std::cout << "find_model_example1\n";
-    // expr x = FormArithmeticExpression(test, c);
-    // std::cout << temp;
-    // expr x = c.int_const("x");
-    // expr y = c.int_const("y");
-    // expr z = c.int_const("x");
-    // // expr q = z < 1;
-    // // // expr w = q + 1;
-    // // std::cout << q;
-    // solver s(c);
-    // s.add(temp);
-
-    // s.add(z > 7);
-    // // s.add(x >= 1);
-    // s.add(y < x + 3);
-    // std::cout << s.check() << "\n";
-
-    // model m = s.get_model();
-    // std::cout << m << "\n";
-    // traversing the model
-    // for (unsigned i = 0; i < m.size(); i++) {
-    //     func_decl v = m[i];
-    //     // this problem contains only constants
-    //     assert(v.arity() == 0); 
-    //     std::cout << v.name() << " = " << m.get_const_interp(v) << "\n";
-    // }
- //    // we can evaluate expressions in the model.
- //    std::cout << "x + y + 1 = " << m.eval(x + y + 1) << "\n";
-}
 
 std::string GetVariableAssignments(model &m)
 {
     std::string result = "";
     for (unsigned i = 0; i < m.size(); i++) {
         func_decl v = m[i];
-        result = result + "," + v.name().str() + "=" + m.get_const_interp(v).to_string();
+        result = result + v.name().str() + "=" + m.get_const_interp(v).to_string() + "," ;
     }
+    result = result.substr(0, result.size() - 1);
     return result;
+}
+
+bool SolveValuationFormula(std::string &valuationFormula)
+{
+    context c;
+    expr valuationFormulaExpression = FormValuationFormula(valuationFormula, c, ',');
+    solver s(c);
+    s.add(valuationFormulaExpression);
+    if(s.check() == unsat)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 std::vector<std::string> SolveValuationFormulae(std::vector<std::string> &valuationFormulae)
@@ -120,8 +77,8 @@ expr FormValuationFormula(std::string &valuationFormula, context &c, char delimi
 
 size_t FindBooleanOperator(std::string &expression)
 {
-    std::string booleanOperators[] = {"<", ">", "<=", ">=", "==", "!="};
-    for (int i = 0 ; i < 5; i++)
+    std::string booleanOperators[] = {"<", ">", "<=", ">=", "==", "!=" };
+    for (int i = 0 ; i < 6; i++)
     {
         size_t result = expression.find(booleanOperators[i]);
         if (result != std::string::npos)
@@ -132,8 +89,15 @@ size_t FindBooleanOperator(std::string &expression)
     return std::string::npos;
 }
 
-expr FormBooleanExpression(std::string &booleanExpression, context &c)
+expr FormBooleanExpression(std::string &booleanExpr, context &c)
 {
+    bool isNegated = false;
+    std::string booleanExpression = booleanExpr; // will remove the negation operator if it exists TODO: add const to parameter
+    if (booleanExpr[0] == '!')
+    {
+        isNegated = true;
+        booleanExpression = booleanExpr.substr(2, booleanExpr.size() -3);
+    }
     size_t operatorLocation = FindBooleanOperator(booleanExpression);
     std::string leftHalf = booleanExpression.substr(0, operatorLocation);
     std::string rightHalf;
@@ -147,35 +111,41 @@ expr FormBooleanExpression(std::string &booleanExpression, context &c)
         rightHalf = booleanExpression.substr(operatorLocation + 1);
     }
 
-    expr leftExpression = FormArithmeticExpression(leftHalf ,c);
+    expr leftExpression = FormArithmeticExpression(leftHalf, c);
     expr rightExpression = FormArithmeticExpression(rightHalf, c);
 
+    expr result = leftExpression; // expr objects can't be empty
     if(booleanExpression[operatorLocation] == '>' && booleanExpression[operatorLocation + 1] == '=')
     {
-        return leftExpression >= rightExpression;
+        result = leftExpression >= rightExpression;
     }
     else if(booleanExpression[operatorLocation] == '<' && booleanExpression[operatorLocation + 1] == '=')
     {
-        return leftExpression <= rightExpression;
+        result = leftExpression <= rightExpression;
     }
     else if(booleanExpression[operatorLocation] == '!' && booleanExpression[operatorLocation + 1] == '=')
     {
-        return leftExpression != rightExpression;
+        result = leftExpression != rightExpression;
     }
     else if(booleanExpression[operatorLocation] == '=' && booleanExpression[operatorLocation + 1] == '=')
     {
-        return leftExpression == rightExpression;
+        result = leftExpression == rightExpression;
     }
     else if(booleanExpression[operatorLocation] == '>')
     {
-        return leftExpression > rightExpression;
+        result = leftExpression > rightExpression;
     }
     else if(booleanExpression[operatorLocation] == '<')
     {
-        return leftExpression < rightExpression;
+        result = leftExpression < rightExpression;
     }
 
-    return leftExpression;
+    if(isNegated)
+    {
+        return !result;
+    }
+
+    return result;
 }
 
 size_t GetNextArithmeticOperator(std::string &arithmeticExpression)

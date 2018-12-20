@@ -324,33 +324,34 @@ def add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables
             # since bound_array[0] is a constant found in the code, it could also be a constant. Thus is it safer to keep it as a data
             function_variables[bound_array[1]]['bound'] = int(bound_array[0]) # add a field containing the bound (or size) to each array
 
-def print_function_variables(function_variables): # takes in a dict and outputs the contents in a the format 'name \n type \n datatype'
-    for variable in function_variables.keys():
-        number_of_versions = function_variables[variable]['versions']
+def print_function_variables(function_variables, output_file): # takes in a dict and outputs the contents in a the format 'name \n type \n datatype'
+    with open(output_file, "w") as f:
+        for variable in function_variables.keys():
+            number_of_versions = function_variables[variable]['versions']
 
-        if function_variables[variable]['is_array'] == True:
-            for array_version in range(number_of_versions):
-                for array_index in range(function_variables[variable]['bound']):
-                    print(variable + str(array_version) + str(array_index))
-                    print(function_variables[variable]['type'])
-                    print(function_variables[variable]['data_type'])
-                    print()
+            if function_variables[variable]['is_array'] == True:
+                for array_version in range(number_of_versions):
+                    for array_index in range(function_variables[variable]['bound']):
+                        f.write(variable + str(array_version) + str(array_index) + '\n')
+                        f.write(function_variables[variable]['type'] + '\n')
+                        f.write(function_variables[variable]['data_type'] + '\n')
+                        f.write('\n')
 
-        elif function_variables[variable]['is_constant'] == True:
-            print(variable)
-            print(function_variables[variable]['type'])
-            print(function_variables[variable]['data_type'])
-            print()
+            elif function_variables[variable]['is_constant'] == True:
+                f.write(variable + '\n')
+                f.write(function_variables[variable]['type'] + '\n')
+                f.write(function_variables[variable]['data_type'] + '\n')
+                f.write('\n')
 
-        else:
-            for variable_version in range(number_of_versions):
-                print(variable + str(variable_version))
-                print(function_variables[variable]['type'])
-                print(function_variables[variable]['data_type'])
-                print()
+            else:
+                for variable_version in range(number_of_versions):
+                    f.write(variable + str(variable_version) + '\n')
+                    f.write(function_variables[variable]['type'] + '\n')
+                    f.write(function_variables[variable]['data_type'] + '\n')
+                    f.write('\n')
 
 def list_to_tuples(list):
-    if len(list) == 0:
+    if len(list) == 1:
         return []
     tuples = []
     for item in list:
@@ -362,8 +363,12 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         file_name = sys.argv[1]
         function_name = sys.argv[2]
+        output_file_name = sys.argv[3]
+        function_arguments_output_file = sys.argv[4] # the file where the names of the input variables will be stored
         ast_dict = file_to_dict(file_name)
         function_to_test = find_function_to_test(ast_dict, function_name)
+        function_arguments = get_args_of_function(function_to_test) # this will be passed to the smt solver, which will run the function by assigning to these variables
+        print_function_variables(function_arguments, function_arguments_output_file)   
         function_variables = get_variables_of_function(function_to_test)
         print("Enter the names of all the variables representing indices and their loop bounds in the following format 'bound,index' separated by spaces")
         bound_index_list = sys.stdin.readline().split('\n')[0].split(' ')
@@ -372,7 +377,7 @@ if __name__ == "__main__":
         bound_array_list = sys.stdin.readline().split('\n')[0].split(' ')
         bound_array_tuples = list_to_tuples(bound_array_list)
         add_types_to_dict(bound_index_tuples, bound_array_tuples, function_variables)
-        print_function_variables(function_variables)
+        print_function_variables(function_variables, output_file_name)
         # ast = from_dict(ast_dict)
         # print(to_json(ast, sort_keys=True, indent=4))
     else:
