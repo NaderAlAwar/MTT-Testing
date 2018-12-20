@@ -1,5 +1,8 @@
-FILE_TO_TEST=$1
+FILE_TO_TEST=$PWD"/"$1
 FUNCTION_TO_TEST=$2
+
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd $parent_path
 OPERATORS_ALLOWED="1"
 PARSED_FILE="parsed_file.txt"
 ARGUMENTS_FILE="arguments.txt"
